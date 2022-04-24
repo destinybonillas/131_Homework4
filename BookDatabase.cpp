@@ -3,7 +3,13 @@
   /// Hint:  Include what you use, use what you include
   ///
   /// Do not put anything else in this section, i.e. comments, classes, functions, etc.  Only #include directives
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <map>
 
+#include "Book.hpp"
+#include "BookDatabase.hpp"
 /////////////////////// END-TO-DO (1) ////////////////////////////
 
 
@@ -55,6 +61,11 @@ BookDatabase::BookDatabase( const std::string & filename )
     /// Hint:  Use your Book's extraction operator to read Books, don't reinvent that here.
     ///        Read books until end of file pushing each book into the data store as they're read.
 
+  // create Book object to books inside of the file
+  Book book;
+  while( fin >> book ) {
+   _data.insert( { book.isbn(), book } );
+  }
   /////////////////////// END-TO-DO (2) ////////////////////////////
 
   // Note:  The file is intentionally not explicitly closed.  The file is closed when fin goes out of scope - for whatever
@@ -77,4 +88,19 @@ BookDatabase::BookDatabase( const std::string & filename )
   /// assignment, implement BookDatabase::find() as a binary search (an O(log n) operation) by delegating to the std::map's binary
   /// search function find().
 
+// find func()
+Book * BookDatabase::find(const std::string & isbn) {
+  auto current = _data.find( isbn );
+                                      // return the book associated with the key
+  if ( _data.find( isbn ) != _data.end() )   return &current->second;
+  
+  // else return nullptr bc end of map was reached
+  return nullptr;
+}
+
+
+// size func()
+std::size_t BookDatabase::size() const {
+  return _data.size();
+}
 /////////////////////// END-TO-DO (3) ////////////////////////////

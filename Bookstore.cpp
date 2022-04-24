@@ -1,7 +1,13 @@
 ///////////////////////// TO-DO (1) //////////////////////////////
   /// Include necessary header files
   /// Hint:  Include what you use, use what you include
+#include <fstream>
+#include <algorithm> // for merge()
+#include <iomanip>
 
+#include "Book.hpp"
+#include "BookDatabase.hpp"
+#include "Bookstore.hpp"
 /////////////////////// END-TO-DO (1) ////////////////////////////
 
 
@@ -31,6 +37,16 @@ Bookstore::Bookstore( const std::string & persistentInventoryDB )
     ///        1) https://en.cppreference.com/w/cpp/io/manip/quoted
     ///        2) https://www.youtube.com/watch?v=Mu-GUZuU31A
 
+  std::string ISBN;
+  unsigned int QUANTITY;
+
+  while( fin >> std::quoted( ISBN ) >> QUANTITY ) {
+    if (ISBN == "9789998379794") {
+      std::cout << QUANTITY << "\n";
+    }
+    _inventoryDB.insert( {ISBN, QUANTITY} );
+  }
+
   /////////////////////// END-TO-DO (2) ////////////////////////////
 }                                                                 // File is closed as fin goes out of scope
 
@@ -56,7 +72,9 @@ Bookstore::BooksSold Bookstore::ringUpAllCustomers( const ShoppingCarts & shoppi
   ///////////////////////// TO-DO (3) //////////////////////////////
     ///  Ring up each customer accumulating the books purchased
     ///  Hint:  merge each customer's purchased books into today's sales.  (https://en.cppreference.com/w/cpp/container/set/merge)
-
+    for (auto i = shoppingCarts.begin(); i != shoppingCarts.end(); ++i) {
+      todaysSales.merge( ringUpCustomer(i->second) );
+    }
   /////////////////////// END-TO-DO (3) ////////////////////////////
 
   return todaysSales;
@@ -94,7 +112,26 @@ Bookstore::BooksSold Bookstore::ringUpCustomer( const ShoppingCart & shoppingCar
     ///       2.2.3.1              Decrease the number of books on hand for the book sold
     ///       2.2.3.2              Add the book's isbn to the list of books purchased
     ///       3         Print the total amount due on the receipt
-
+  double amountDue = 0.0;
+  
+  for (auto i = shoppingCart.begin(); i != shoppingCart.end(); ++i) {
+      Book * bookDescrip = worldWideBookDatabase.find(i->first);
+      if (bookDescrip == nullptr) {
+        std::cout << "Book not found: this book is free!\n";
+      } else {
+        // print description and accumulate price 
+        std::cout << *bookDescrip << "\n";
+        amountDue += bookDescrip->price();
+        // if book is sold by store, decrement that book and add it to what is being purchased
+        if ( _inventoryDB.find( bookDescrip->isbn() ) != _inventoryDB.end() ) {
+        --_inventoryDB.find( bookDescrip->isbn() );
+        purchasedBooks.insert( {i->first} );
+        }
+      }
+  }
+    // print total
+    std::cout << "Total: " << amountDue << "\n";
+  
   /////////////////////// END-TO-DO (4) ////////////////////////////
 
   return purchasedBooks;
@@ -131,6 +168,31 @@ void Bookstore::reorderItems( BooksSold & todaysSales )
     ///        2       Reset the list of book sold today so the list can be reused again later
     ///
     /// Take special care to avoid excessive searches in your solution
+
+    for (auto i = todaysSales.begin(); i != todaysSales.end(); ++i) {
+      auto bookDescrip = _inventoryDB.find(*i);
+      // enter first branch comparing if end is reached or threshold is passed
+      if (bookDescrip == _inventoryDB.end() || bookDescrip->second < REORDER_THRESHOLD) {
+        Book * b = worldWideBookDatabase.find(bookDescrip->first);
+        // if book is not in world wide database just print that books ISBN
+        if (worldWideBookDatabase.find(bookDescrip->first) == nullptr) {
+          std::cout << bookDescrip->first << "\n";
+        // if books in the database print full descrip
+        } else {
+          std::cout << *b << "\n";
+        }
+        // case 1: end is reached and store no longer sells book
+        if (bookDescrip == _inventoryDB.end()) {
+          std::cout << "***" << " is not sold anymore, and will not be reordered\n";
+        // case 2: reorder
+        } else {
+          std::cout << " is at a quantity of: " << bookDescrip->second << "\n" << "reordering: " << LOT_COUNT << " books\n";
+          bookDescrip->second += LOT_COUNT;
+        }
+        //todaysSales.clear();
+      }
+    }
+
 
   /////////////////////// END-TO-DO (5) ////////////////////////////
 }
