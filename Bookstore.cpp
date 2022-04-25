@@ -70,6 +70,8 @@ Bookstore::BooksSold Bookstore::ringUpAllCustomers( const ShoppingCarts & shoppi
     ///  Ring up each customer accumulating the books purchased
     ///  Hint:  merge each customer's purchased books into today's sales.  (https://en.cppreference.com/w/cpp/container/set/merge)
     for (auto i = shoppingCarts.begin(); i != shoppingCarts.end(); ++i) {
+      // print out the customer name 
+      std::cout << i->first << "'s shopping cart contains:" << "\n";
       todaysSales.merge( ringUpCustomer(i->second) );
     }
   /////////////////////// END-TO-DO (3) ////////////////////////////
@@ -110,14 +112,14 @@ Bookstore::BooksSold Bookstore::ringUpCustomer( const ShoppingCart & shoppingCar
     ///       2.2.3.2              Add the book's isbn to the list of books purchased
     ///       3         Print the total amount due on the receipt
   double amountDue = 0.0;
-  
   for (auto i = shoppingCart.begin(); i != shoppingCart.end(); ++i) {
       Book * bookDescrip = worldWideBookDatabase.find(i->first);
       if (bookDescrip == nullptr) {
-        std::cout << "Book not found: this book is free!\n";
+        std::cout << "    " << std::quoted(i->first);
+        std::cout << " not found, the book is free!\n";
       } else {
         // print description and accumulate price 
-        std::cout << *bookDescrip << "\n";
+        std::cout << "    " << *bookDescrip << "\n";
         amountDue += bookDescrip->price();
         // if book is sold by store, decrement that book and add it to what is being purchased
         auto x = _inventoryDB.find( bookDescrip->isbn() );
@@ -128,8 +130,8 @@ Bookstore::BooksSold Bookstore::ringUpCustomer( const ShoppingCart & shoppingCar
       }
   }
     // print total
-    std::cout << "-------------------------";
-    std::cout << "\nTotal   " << amountDue << "\n\n\n";
+    std::cout << "    -------------------------";
+    std::cout << "\n    Total   " << amountDue << "\n\n\n";
   
   /////////////////////// END-TO-DO (4) ////////////////////////////
 
@@ -184,12 +186,12 @@ void Bookstore::reorderItems( BooksSold & todaysSales )
         }
         // case 1: end is reached and store no longer sells book
         if (bookDescrip == _inventoryDB.end()) {
-          std::cout << "\n   ***" << " no longer sold in this store and will not be reordered\n";
+          std::cout << "\n       ***" << " no longer sold in this store and will not be reordered\n";
         // case 2: reorder
         } else {
-          auto difference = LOT_COUNT - bookDescrip->second;
-          std::cout << "\n   only " << bookDescrip->second << " remain in stock which is (" << difference << ") unit(s) below reorder threshold (15), " 
-                    <<  "re-ordering " << LOT_COUNT << " more\n";
+          auto difference = REORDER_THRESHOLD - bookDescrip->second;
+          std::cout << "\n       only " << bookDescrip->second << " remain in stock which is " << difference << " unit(s) below reorder threshold (15), " 
+                    <<  "re-ordering " << LOT_COUNT << " more\n\n";
           bookDescrip->second += LOT_COUNT;
         }
       }
