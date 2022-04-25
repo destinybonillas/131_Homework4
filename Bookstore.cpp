@@ -3,7 +3,7 @@
   /// Hint:  Include what you use, use what you include
 #include <fstream>
 #include <algorithm> // for merge()
-#include <iomanip>
+#include <iomanip>  // for quoted()
 
 #include "Book.hpp"
 #include "BookDatabase.hpp"
@@ -41,9 +41,6 @@ Bookstore::Bookstore( const std::string & persistentInventoryDB )
   unsigned int QUANTITY;
 
   while( fin >> std::quoted( ISBN ) >> QUANTITY ) {
-    if (ISBN == "9789998379794") {
-      std::cout << QUANTITY << "\n";
-    }
     _inventoryDB.insert( {ISBN, QUANTITY} );
   }
 
@@ -123,14 +120,16 @@ Bookstore::BooksSold Bookstore::ringUpCustomer( const ShoppingCart & shoppingCar
         std::cout << *bookDescrip << "\n";
         amountDue += bookDescrip->price();
         // if book is sold by store, decrement that book and add it to what is being purchased
-        if ( _inventoryDB.find( bookDescrip->isbn() ) != _inventoryDB.end() ) {
-        --_inventoryDB.find( bookDescrip->isbn() );
+        auto x = _inventoryDB.find( bookDescrip->isbn() );
+        if ( x != _inventoryDB.end() ) {
+        x->second--;
         purchasedBooks.insert( {i->first} );
         }
       }
   }
     // print total
-    std::cout << "Total: " << amountDue << "\n";
+    std::cout << "-------------------------";
+    std::cout << "\nTotal   " << amountDue << "\n\n\n";
   
   /////////////////////// END-TO-DO (4) ////////////////////////////
 
@@ -168,30 +167,34 @@ void Bookstore::reorderItems( BooksSold & todaysSales )
     ///        2       Reset the list of book sold today so the list can be reused again later
     ///
     /// Take special care to avoid excessive searches in your solution
-
+    auto j = 1;
     for (auto i = todaysSales.begin(); i != todaysSales.end(); ++i) {
       auto bookDescrip = _inventoryDB.find(*i);
       // enter first branch comparing if end is reached or threshold is passed
       if (bookDescrip == _inventoryDB.end() || bookDescrip->second < REORDER_THRESHOLD) {
-        Book * b = worldWideBookDatabase.find(bookDescrip->first);
+        Book * b = worldWideBookDatabase.find(*i);
         // if book is not in world wide database just print that books ISBN
-        if (worldWideBookDatabase.find(bookDescrip->first) == nullptr) {
-          std::cout << bookDescrip->first << "\n";
+        if (b == nullptr) {
+          std::string isbn = bookDescrip->first;
+          std::cout << "\n" << isbn;
         // if books in the database print full descrip
         } else {
-          std::cout << *b << "\n";
+          std::cout << j << ":  " << "{" << *b << "}";
+          j++;
         }
         // case 1: end is reached and store no longer sells book
         if (bookDescrip == _inventoryDB.end()) {
-          std::cout << "***" << " is not sold anymore, and will not be reordered\n";
+          std::cout << "\n   ***" << " no longer sold in this store and will not be reordered\n";
         // case 2: reorder
         } else {
-          std::cout << " is at a quantity of: " << bookDescrip->second << "\n" << "reordering: " << LOT_COUNT << " books\n";
+          auto difference = LOT_COUNT - bookDescrip->second;
+          std::cout << "\n   only " << bookDescrip->second << " remain in stock which is (" << difference << ") unit(s) below reorder threshold (15), " 
+                    <<  "re-ordering " << LOT_COUNT << " more\n";
           bookDescrip->second += LOT_COUNT;
         }
-        //todaysSales.clear();
       }
     }
+    todaysSales.clear();
 
 
   /////////////////////// END-TO-DO (5) ////////////////////////////
